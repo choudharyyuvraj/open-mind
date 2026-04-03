@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenMind — Memory Console</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181b;
+    --border: #27272a;
+    --text: #e4e4e7;
+    --muted: #71717a;
+    --accent: #a78bfa;
+    --accent-dim: #7c3aed;
+    --green: #34d399;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --cyan: #22d3ee;
+    --radius: 8px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  .health-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--red); flex-shrink: 0; transition: background 0.3s;
+  }
+  .health-dot.ok { background: var(--green); }
+  .health-label { font-size: 12px; color: var(--muted); }
+  .spacer { flex: 1; }
+  .session-input {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 12px; border-radius: var(--radius); font-size: 13px; width: 220px;
+  }
+  .session-input:focus { outline: none; border-color: var(--accent-dim); }
+  .small-input {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 8px; border-radius: var(--radius); font-size: 12px; width: 180px;
+  }
+  .small-input:focus { outline: none; border-color: var(--accent-dim); }
+  .small-label { font-size: 11px; color: var(--muted); }
+  .mode-pill {
+    border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px;
+    font-size: 11px; color: var(--muted); cursor: pointer; user-select: none;
+    background: transparent;
+  }
+  .mode-pill.active {
+    border-color: var(--accent-dim); color: #fff; background: var(--accent-dim);
+  }
+  .token-badge {
+    background: #7c3aed22; color: var(--accent); font-size: 11px; padding: 3px 8px;
+    border-radius: 4px; font-weight: 600;
+  }
+
+  main { display: flex; flex: 1; min-height: 0; }
+
+  .chat-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .msg {
+    max-width: 80%; padding: 10px 14px; border-radius: var(--radius);
+    font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user {
+    align-self: flex-end; background: var(--accent-dim); color: #fff;
+    border-bottom-right-radius: 2px;
+  }
+  .msg.assistant {
+    align-self: flex-start; background: #1e3a5f; color: var(--blue);
+    border: 1px solid #2563eb33; border-bottom-left-radius: 2px;
+  }
+  .msg.system {
+    align-self: flex-start; background: var(--surface);
+    border: 1px solid var(--border); color: var(--muted);
+    font-size: 13px; border-bottom-left-radius: 2px;
+  }
+  .msg-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 4px; opacity: 0.7;
+  }
+  .chat-input-row {
+    display: flex; gap: 8px; padding: 12px 20px;
+    border-top: 1px solid var(--border); background: var(--surface);
+  }
+  .chat-input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: var(--radius); font-size: 14px;
+    resize: none; font-family: inherit;
+  }
+  .chat-input:focus { outline: none; border-color: var(--accent-dim); }
+  .btn {
+    background: var(--accent-dim); color: #fff; border: none;
+    padding: 10px 20px; border-radius: var(--radius); font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--surface); border-color: var(--accent-dim); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .memory-panel { width: 460px; display: flex; flex-direction: column; flex-shrink: 0; }
+  .memory-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface);
+    gap: 8px; flex-wrap: wrap;
+  }
+  .memory-header h2 { font-size: 14px; font-weight: 600; }
+  .view-toggle {
+    display: flex; gap: 4px;
+  }
+  .view-toggle button {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
+  }
+  .view-toggle button.active {
+    background: var(--accent-dim); color: #fff; border-color: var(--accent-dim);
+  }
+  .memory-list {
+    flex: 1; overflow-y: auto; padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .anchor-card {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #2563eb44;
+    border-radius: var(--radius); padding: 12px 14px; font-size: 12px; line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .anchor-card h3 { font-size: 12px; color: var(--cyan); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .anchor-card .anchor-intent { color: var(--text); margin-bottom: 4px; }
+  .anchor-card .anchor-facts { color: var(--muted); }
+  .anchor-card .anchor-facts li { margin-left: 12px; margin-top: 2px; }
+
+  .memory-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px; font-size: 13px; line-height: 1.5;
+  }
+  .memory-item.role-user { border-left: 3px solid var(--accent-dim); }
+  .memory-item.role-assistant { border-left: 3px solid var(--blue); }
+  .memory-item.type-fact { border-left: 3px solid var(--green); }
+  .memory-item.type-anchor { border-left: 3px solid var(--cyan); }
+  .memory-item .role-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 1px 6px; border-radius: 3px; margin-bottom: 4px;
+  }
+  .memory-item .role-tag.user { background: var(--accent-dim); color: #fff; }
+  .memory-item .role-tag.assistant { background: #2563eb44; color: var(--blue); }
+  .memory-item .role-tag.system { background: var(--border); color: var(--muted); }
+
+  .type-badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 1px 6px; border-radius: 3px; margin-left: 4px;
+  }
+  .type-badge.episode { background: #27272a; color: var(--muted); }
+  .type-badge.fact { background: #065f4622; color: var(--green); }
+  .type-badge.anchor { background: #164e6322; color: var(--cyan); }
+
+  .rel-badge {
+    display: inline-block; font-size: 9px; padding: 1px 5px;
+    border-radius: 3px; margin-top: 4px; margin-right: 3px;
+  }
+  .rel-badge.supersedes { background: #f8717133; color: var(--red); }
+  .rel-badge.elaborates { background: #fb923c33; color: var(--orange); }
+  .rel-badge.correlates { background: #60a5fa33; color: var(--blue); }
+
+  .memory-item .meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .empty-state { color: var(--muted); font-size: 13px; text-align: center; padding: 40px 16px; }
+
+  @media (max-width: 768px) {
+    main { flex-direction: column; }
+    .memory-panel { width: 100%; border-top: 1px solid var(--border); }
+    .chat-panel { border-right: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OpenMind <span>Memory Console</span></h1>
+  <div class="spacer"></div>
+  <span class="token-badge" id="tokenBadge" style="display:none">0 tokens</span>
+  <span class="small-label">Assistant:</span>
+  <button type="button" class="mode-pill active" id="modeMemory">Memory-Only</button>
+  <button type="button" class="mode-pill" id="modeOpenAI">OpenAI</button>
+  <input class="small-input" id="apiBase" placeholder="API base (auto)" title="Gateway API base URL">
+  <input class="small-input" id="openaiModel" value="gpt-4o-mini" spellcheck="false" title="OpenAI model">
+  <input class="small-input" id="openaiKey" type="password" placeholder="OpenAI API Key (for testing)">
+  <label style="font-size:12px;color:var(--muted);">Session:</label>
+  <input class="session-input" id="sessionId" value="demo-session" spellcheck="false">
+  <div class="health-dot" id="healthDot" title="Gateway status"></div>
+  <span class="health-label" id="healthLabel">connecting...</span>
+</header>
+
+<main>
+  <section class="chat-panel">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg system">Welcome to OpenMind. Type a message to store it on the decentralised memory subnet. Facts are automatically extracted and relationships detected for token-efficient retrieval.</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Type a memory to store..."></textarea>
+      <button type="button" class="btn" id="sendBtn">Send</button>
+    </div>
+  </section>
+
+  <section class="memory-panel">
+    <div class="memory-header">
+      <h2>Memory Explorer</h2>
+      <div class="view-toggle">
+        <button type="button" class="active" id="viewFacts">Facts</button>
+        <button type="button" id="viewFull">Full History</button>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" id="compactBtn">Compact</button>
+      <button type="button" class="btn btn-outline btn-sm" id="refreshBtn">Refresh</button>
+    </div>
+    <div class="memory-list" id="memoryList">
+      <div class="empty-state">No memories loaded yet. Click Refresh.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function getDefaultApiBase() {
+  const p = window.location.port;
+  // If opened from Live Server or static host, point to gateway by default.
+  if (p === "5500" || p === "3000" || p === "5173") {
+    return "http://127.0.0.1:8090";
+  }
+  return window.location.origin;
+}
+
+function getApiBase() {
+  const v = (document.getElementById("apiBase")?.value || "").trim();
+  return v || getDefaultApiBase();
+}
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+const memoryList = document.getElementById("memoryList");
+const healthDot = document.getElementById("healthDot");
+const healthLabel = document.getElementById("healthLabel");
+const sessionInput = document.getElementById("sessionId");
+const tokenBadge = document.getElementById("tokenBadge");
+const apiBaseInput = document.getElementById("apiBase");
+const openaiKeyInput = document.getElementById("openaiKey");
+const openaiModelInput = document.getElementById("openaiModel");
+const modeMemoryBtn = document.getElementById("modeMemory");
+const modeOpenAIBtn = document.getElementById("modeOpenAI");
+const viewFactsBtn = document.getElementById("viewFacts");
+const viewFullBtn = document.getElementById("viewFull");
+const compactBtn = document.getElementById("compactBtn");
+const refreshBtn = document.getElementById("refreshBtn");
+
+let currentView = "facts";
+let assistantMode = localStorage.getItem("om_assistant_mode") || "memory";
+
+function setAssistantMode(mode) {
+  assistantMode = mode;
+  localStorage.setItem("om_assistant_mode", mode);
+  modeMemoryBtn.className = "mode-pill" + (mode === "memory" ? " active" : "");
+  modeOpenAIBtn.className = "mode-pill" + (mode === "openai" ? " active" : "");
+}
+
+function loadSettings() {
+  const savedModel = localStorage.getItem("om_openai_model") || "gpt-4o-mini";
+  const savedApi = localStorage.getItem("om_api_base") || getDefaultApiBase();
+  openaiKeyInput.value = "";
+  openaiKeyInput.placeholder = "Using server .env";
+  openaiKeyInput.disabled = true;
+  apiBaseInput.value = savedApi;
+  openaiModelInput.value = savedModel;
+  setAssistantMode(assistantMode);
+}
+
+function persistSettings() {
+  localStorage.setItem("om_openai_model", openaiModelInput.value.trim() || "gpt-4o-mini");
+  localStorage.setItem("om_api_base", apiBaseInput.value.trim() || getDefaultApiBase());
+}
+
+function getSession() {
+  return sessionInput.value.trim() || "demo-session";
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById("viewFacts").className = v === "facts" ? "active" : "";
+  document.getElementById("viewFull").className = v === "full" ? "active" : "";
+  refreshMemories();
+}
+
+function addMsg(text, cls, label) {
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  if (label) {
+    const lbl = document.createElement("div");
+    lbl.className = "msg-label";
+    lbl.textContent = label;
+    d.appendChild(lbl);
+  }
+  const span = document.createElement("span");
+  span.textContent = text;
+  d.appendChild(span);
+  chatMessages.appendChild(d);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function storeOnSubnet(content, role) {
+  const API = getApiBase();
+  const res = await fetch(API + "/v1/memory/store", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: getSession(), content: content, role: role }),
+  });
+  return await res.json();
+}
+
+async function fetchMemoryContextForPrompt(userText) {
+  const API = getApiBase();
+  const res = await fetch(API + "/v1/memory/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: getSession(),
+      query: userText,
+      top_k: 30,
+      smart: true
+    }),
+  });
+  const data = await res.json();
+
+  let context = "";
+  if (data.anchor && data.anchor.content) {
+    context += "Session anchor:\n" + data.anchor.content + "\n\n";
+  }
+  const facts = data.facts || [];
+  if (facts.length) {
+    context += "Facts:\n";
+    facts.slice(0, 20).forEach(f => {
+      context += "- " + (f.content || "") + "\n";
+    });
+    context += "\n";
+  }
+  const sources = data.sources || [];
+  if (sources.length) {
+    context += "Source snippets:\n";
+    sources.slice(0, 8).forEach(s => {
+      const text = (s.content || "").slice(0, 400);
+      context += "- " + text + "\n";
+    });
+  }
+  return context.trim();
+}
+
+async function callOpenAI(userText, memoryContext) {
+  const model = openaiModelInput.value.trim() || "gpt-4o-mini";
+  persistSettings();
+  const API = getApiBase();
+  const res = await fetch(API + "/v1/chat/respond", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      session_id: getSession(),
+      user_message: userText,
+      model: model,
+      top_k: 30,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Gateway chat error: " + err);
+  }
+  const data = await res.json();
+  return (data.response || "").trim();
+}
+
+async function sendMessage(evt) {
+  if (evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+  }
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = "";
+  addMsg(text, "user", "You");
+  sendBtn.disabled = true;
+
+  try {
+    const storeResult = await storeOnSubnet(text, "user");
+    const stored = (storeResult.results || [])[0];
+
+    if (stored && stored.status === "stored") {
+      const fc = stored.fact_count || 0;
+      let aiResponse = "Stored on OpenMind (chunk " + stored.id.slice(0, 8)
+        + "…). Extracted " + fc + " fact(s). I can recall this in future sessions.";
+
+      if (assistantMode === "openai") {
+        const memoryContext = await fetchMemoryContextForPrompt(text);
+        aiResponse = await callOpenAI(text, memoryContext);
+      }
+
+      addMsg(aiResponse, "assistant", "Assistant");
+      await storeOnSubnet(aiResponse, "assistant");
+      await refreshMemories();
+    } else {
+      addMsg("Sent to miners. Awaiting confirmation.", "system");
+    }
+  } catch (e) {
+    addMsg("Error: " + e.message, "system");
+  }
+  sendBtn.disabled = false;
+}
+
+async function compactSession() {
+  try {
+    const API = getApiBase();
+    const res = await fetch(API + "/v1/memory/compact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: getSession() }),
+    });
+    const data = await res.json();
+    addMsg("Session compacted: " + JSON.stringify((data.results||[])[0]?.status || "done"), "system");
+    refreshMemories();
+  } catch (e) {
+    addMsg("Compact error: " + e.message, "system");
+  }
+}
+
+function renderAnchor(anchor) {
+  if (!anchor) return "";
+  const md = anchor.metadata || anchor;
+  const intent = md.intent || "";
+  const kf = md.key_facts || [];
+  let html = '<div class="anchor-card">';
+  html += '<h3>Session Anchor</h3>';
+  if (intent) html += '<div class="anchor-intent">' + escapeHtml(intent) + '</div>';
+  if (kf.length) {
+    html += '<ul class="anchor-facts">';
+    kf.forEach(f => { html += '<li>' + escapeHtml(f) + '</li>'; });
+    html += '</ul>';
+  }
+  const fc = md.active_fact_count || md.fact_count || 0;
+  html += '<div style="margin-top:6px;font-size:10px;color:var(--muted);">' + fc + ' active facts · updated ' + (md.last_updated || '') + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderRelationships(rels) {
+  if (!rels || !rels.length) return "";
+  return rels.map(r => {
+    const cls = r.relation || "correlates";
+    return '<span class="rel-badge ' + cls + '">' + cls + '</span>';
+  }).join("");
+}
+
+function renderMemoryItem(r) {
+  const md = r.metadata || {};
+  const role = r.role || md.role || "user";
+  const type = r.type || md.type || "episode";
+  const item = document.createElement("div");
+  item.className = "memory-item role-" + role + " type-" + type;
+
+  let header = '<span class="role-tag ' + role + '">' + role + '</span>';
+  header += '<span class="type-badge ' + type + '">' + type + '</span>';
+  item.innerHTML = header;
+
+  const content = document.createElement("div");
+  content.textContent = r.content || r.text || JSON.stringify(r);
+  content.style.marginTop = "4px";
+  item.appendChild(content);
+
+  const rels = r.relationships || [];
+  if (rels.length) {
+    const relDiv = document.createElement("div");
+    relDiv.innerHTML = renderRelationships(rels);
+    item.appendChild(relDiv);
+  }
+
+  const id = r.id || md.id;
+  const ts = r.timestamp || md.timestamp;
+  const metaParts = [];
+  if (id) metaParts.push(id.slice(0, 8) + "…");
+  if (ts) metaParts.push(ts);
+  if (md.confidence) metaParts.push("conf: " + (md.confidence * 100).toFixed(0) + "%");
+  if (md.source_episode_id) metaParts.push("src: " + md.source_episode_id.slice(0, 8) + "…");
+  if (metaParts.length) {
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = metaParts.join(" · ");
+    item.appendChild(meta);
+  }
+
+  return item;
+}
+
+async function refreshMemories() {
+  const btn = document.getElementById("refreshBtn");
+  btn.disabled = true;
+  btn.textContent = "Loading...";
+
+  const useSmart = currentView === "facts";
+
+  try {
+    const API = getApiBase();
+    const res = await fetch(API + "/v1/memory/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: getSession(),
+        query: "*",
+        top_k: 100,
+        smart: useSmart,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.token_estimate) {
+      tokenBadge.textContent = data.token_estimate + " tokens";
+      tokenBadge.style.display = "inline-block";
+    }
+
+    memoryList.innerHTML = "";
+
+    if (useSmart && data.anchor) {
+      memoryList.innerHTML = renderAnchor(data.anchor);
+    }
+
+    let items = [];
+    if (useSmart && data.facts) {
+      items = data.facts || [];
+      if (data.sources && data.sources.length) {
+        const srcHeader = document.createElement("div");
+        srcHeader.style.cssText = "font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;";
+        srcHeader.textContent = "Source Episodes (" + data.sources.length + ")";
+        memoryList.appendChild(srcHeader);
+        data.sources.forEach(s => memoryList.appendChild(renderMemoryItem(s)));
+
+        const factHeader = document.createElement("div");
+        factHeader.style.cssText = "font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;";
+        factHeader.textContent = "Extracted Facts (" + items.length + ")";
+        memoryList.appendChild(factHeader);
+      }
+    } else {
+      items = data.results || [];
+    }
+
+    if (items.length === 0 && !data.anchor) {
+      memoryList.innerHTML = '<div class="empty-state">No memories found for this session.</div>';
+    } else {
+      items.forEach(r => memoryList.appendChild(renderMemoryItem(r)));
+    }
+  } catch (e) {
+    memoryList.innerHTML = '<div class="empty-state">Error: ' + escapeHtml(e.message) + '</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = "Refresh";
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function pollHealth() {
+  try {
+    const API = getApiBase();
+    const res = await fetch(API + "/v1/health");
+    const data = await res.json();
+    const ok = data.status === "ok" && data.subtensor && data.dendrite;
+    healthDot.className = "health-dot" + (ok ? " ok" : "");
+    healthLabel.textContent = ok
+      ? "n=" + data.metagraph_n + " · step " + data.validator_step
+      : data.status || "offline";
+  } catch {
+    healthDot.className = "health-dot";
+    healthLabel.textContent = "offline";
+  }
+}
+
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  sendMessage(e);
+});
+
+modeMemoryBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  setAssistantMode("memory");
+});
+modeOpenAIBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  setAssistantMode("openai");
+});
+viewFactsBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  setView("facts");
+});
+viewFullBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  setView("full");
+});
+compactBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  compactSession();
+});
+refreshBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  refreshMemories();
+});
+
+// Defensive: block any implicit form submit that may be injected by extensions.
+document.addEventListener("submit", (e) => {
+  e.preventDefault();
+}, true);
+
+pollHealth();
+setInterval(pollHealth, 5000);
+loadSettings();
+</script>
+</body>
+</html>

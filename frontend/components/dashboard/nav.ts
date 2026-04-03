@@ -1,0 +1,34 @@
+import type { LucideIcon } from "lucide-react"
+import {
+  Activity,
+  Code2,
+  CreditCard,
+  LayoutDashboard,
+  Search,
+  Settings,
+  Share2,
+  Shield,
+  History,
+  GitBranch,
+} from "lucide-react"
+
+export type DashboardNavItem = {
+  title: string
+  href: string
+  icon: LucideIcon
+}
+
+export const dashboardMainNav: DashboardNavItem[] = [
+  { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Memory Explorer", href: "/dashboard/explorer", icon: Search },
+  { title: "Sessions & Workflows", href: "/dashboard/workflows", icon: GitBranch },
+  { title: "Provenance", href: "/dashboard/provenance", icon: History },
+  { title: "Shared Spaces", href: "/dashboard/shared", icon: Share2 },
+  { title: "Durability", href: "/dashboard/durability", icon: Shield },
+  { title: "API & MCP", href: "/dashboard/api", icon: Code2 },
+]
+
+export const dashboardAccountNav: DashboardNavItem[] = [
+  { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
+  { title: "Settings", href: "/dashboard/settings", icon: Settings },
+]

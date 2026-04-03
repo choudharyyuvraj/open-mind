@@ -1,0 +1,11 @@
+.cursor/
+.DS_Store
+.vscode/
+node_modules/
+
+.env
+.env.local
+.env.*.local
+
+# Next.js build output — never commit. Vercel creates this during `pnpm run build`.
+.next/
