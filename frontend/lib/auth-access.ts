@@ -5,7 +5,7 @@ export { AUTH_WAITLIST_MESSAGE }
 
 /** Set `AUTH_OPEN=true` in the environment to allow login, register, and related auth routes (e.g. local development). */
 export function isAuthOpen(): boolean {
-  return process.env.AUTH_OPEN === "true"
+  return process.env.AUTH_OPEN === "true" || process.env.DEV_BYPASS_AUTH === "true"
 }
 
 export function authWaitlistBlockedResponse() {

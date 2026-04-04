@@ -14,7 +14,7 @@ import { ArrowLeft, ArrowRight, Info, Wallet } from "lucide-react"
 import { toast } from "sonner"
 
 /** Must match server `AUTH_OPEN`; set `NEXT_PUBLIC_AUTH_OPEN=true` in .env for local auth. */
-const AUTH_OPEN = process.env.NEXT_PUBLIC_AUTH_OPEN === "true"
+const AUTH_OPEN = process.env.NEXT_PUBLIC_AUTH_OPEN === "true" || process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true"
 
 export function LoginForm() {
   const router = useRouter()
