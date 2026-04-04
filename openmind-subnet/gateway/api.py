@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
+from gateway.mcp_server import mcp
 from gateway.models import (
     ChatRequest,
     ChatResponse,
@@ -46,6 +47,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=_gateway_lifespan,
 )
+
+# Expose a remote MCP endpoint for connector-based clients (Claude, etc.).
+# This keeps existing /v1 REST routes unchanged while adding URL-based MCP transport.
+app.mount("/mcp", mcp.streamable_http_app())
 
 app.add_middleware(
     CORSMiddleware,
