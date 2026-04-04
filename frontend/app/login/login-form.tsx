@@ -26,25 +26,13 @@ export function LoginForm() {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [userId, setUserId] = useState("")
-  const [verificationCode, setVerificationCode] = useState("")
-  const [verificationChannel, setVerificationChannel] = useState<"email" | "phone">(
-    "email",
-  )
   const [resetCode, setResetCode] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [forgotIdentifier, setForgotIdentifier] = useState("")
   const [showResetFlow, setShowResetFlow] = useState(false)
   const [devResetHint, setDevResetHint] = useState<string | null>(null)
-  const [devVerifyHint, setDevVerifyHint] = useState<string | null>(null)
-  const [resendCooldown, setResendCooldown] = useState(0)
   const [loading, setLoading] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return
-    const id = setInterval(() => setResendCooldown((v) => v - 1), 1000)
-    return () => clearInterval(id)
-  }, [resendCooldown])
 
   async function submit(mode: "sign-in" | "register") {
     if (!AUTH_OPEN) {
@@ -77,8 +65,9 @@ export function LoginForm() {
       }
       if (mode === "register") {
         setUserId(data.user?.id ?? "")
-        setVerificationChannel(data.user?.email ? "email" : "phone")
-        toast.success("Account created. Verify your email/phone to complete setup.")
+        toast.success("Account created and signed in.")
+        router.push(from.startsWith("/") ? from : "/dashboard")
+        router.refresh()
         return
       }
       toast.success("Signed in successfully.")
@@ -89,54 +78,6 @@ export function LoginForm() {
     } finally {
       setLoading(false)
     }
-  }
-
-  async function requestVerificationCode() {
-    if (!AUTH_OPEN) {
-      toast.error(AUTH_WAITLIST_MESSAGE)
-      return
-    }
-    if (!userId || resendCooldown > 0) return
-    const res = await fetch("/api/auth/verify/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, channel: verificationChannel }),
-    })
-    const data = (await res.json().catch(() => ({}))) as {
-      error?: string
-      devCode?: string
-    }
-    if (!res.ok) {
-      toast.error(data.error ?? "Could not send verification code.")
-      return
-    }
-    setResendCooldown(30)
-    setDevVerifyHint(data.devCode ?? null)
-    toast.success(`Verification code sent to your ${verificationChannel}.`)
-  }
-
-  async function confirmVerificationCode() {
-    if (!AUTH_OPEN) {
-      toast.error(AUTH_WAITLIST_MESSAGE)
-      return
-    }
-    if (!userId || !verificationCode) return
-    const res = await fetch("/api/auth/verify/confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        channel: verificationChannel,
-        code: verificationCode,
-      }),
-    })
-    const data = (await res.json().catch(() => ({}))) as { error?: string }
-    if (!res.ok) {
-      toast.error(data.error ?? "Verification failed.")
-      return
-    }
-    toast.success("Verification successful. You can sign in now.")
-    setVerificationCode("")
   }
 
   async function startPasswordReset() {
@@ -354,55 +295,6 @@ export function LoginForm() {
                 <ArrowRight className="size-4" />
               </Button>
 
-              {userId && (
-                <div className="rounded-xl border border-foreground/10 p-4 space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Verify your {verificationChannel} with a one-time code.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      type="button"
-                      variant={verificationChannel === "email" ? "default" : "outline"}
-                      className="rounded-full"
-                      onClick={() => setVerificationChannel("email")}
-                    >
-                      Email
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={verificationChannel === "phone" ? "default" : "outline"}
-                      className="rounded-full"
-                      onClick={() => setVerificationChannel("phone")}
-                    >
-                      Phone
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                    />
-                    <Button type="button" onClick={confirmVerificationCode} className="rounded-full">
-                      Verify
-                    </Button>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={requestVerificationCode}
-                    disabled={resendCooldown > 0}
-                    className="rounded-full"
-                  >
-                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
-                  </Button>
-                  {devVerifyHint && (
-                    <p className="font-mono text-xs text-muted-foreground">
-                      Dev code: {devVerifyHint}
-                    </p>
-                  )}
-                </div>
-              )}
             </TabsContent>
           </Tabs>
 

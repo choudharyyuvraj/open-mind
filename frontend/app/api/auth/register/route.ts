@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs"
 import { MongoServerError, type ObjectId } from "mongodb"
 import {
   authCollections,
-  createSixDigitCode,
   ensureAuthIndexes,
   normalizeEmail,
   normalizePhone,
@@ -92,9 +91,9 @@ export async function POST(request: Request) {
     )
   }
 
-  let users, sessions, codes
+  let users, sessions
   try {
-    ;({ users, sessions, codes } = await authCollections())
+    ;({ users, sessions } = await authCollections())
   } catch (e) {
     logRegisterError("authCollections", e)
     const message = e instanceof Error ? e.message : "Database unavailable."
@@ -126,8 +125,8 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(password, 12)
     const userDoc: Record<string, unknown> = {
       passwordHash,
-      emailVerified: false,
-      phoneVerified: false,
+      emailVerified: Boolean(email),
+      phoneVerified: Boolean(phone),
       createdAt: now,
       updatedAt: now,
     }
@@ -148,25 +147,6 @@ export async function POST(request: Request) {
 
   let sessionToken: string
   try {
-    if (email) {
-      await codes.insertOne({
-        userId: insertedId,
-        purpose: "verify_email",
-        code: createSixDigitCode(),
-        createdAt: now,
-        expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-      })
-    }
-    if (phone) {
-      await codes.insertOne({
-        userId: insertedId,
-        purpose: "verify_phone",
-        code: createSixDigitCode(),
-        createdAt: now,
-        expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-      })
-    }
-
     sessionToken = createSessionToken()
     await sessions.insertOne({
       userId: insertedId,
@@ -175,7 +155,7 @@ export async function POST(request: Request) {
       expiresAt: sessionExpiresAt(),
     })
   } catch (e) {
-    logRegisterError("codesOrSession", e)
+    logRegisterError("sessionSetup", e)
     return NextResponse.json(
       { error: "Account created but follow-up setup failed. Try signing in." },
       { status: 500 },
@@ -209,8 +189,8 @@ export async function POST(request: Request) {
       id: String(insertedId),
       email: email ?? null,
       phone: phone ?? null,
-      emailVerified: false,
-      phoneVerified: false,
+      emailVerified: Boolean(email),
+      phoneVerified: Boolean(phone),
     },
   })
 }
