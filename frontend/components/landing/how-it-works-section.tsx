@@ -83,7 +83,7 @@ export function HowItWorksSection() {
         }} />
       </div>
 
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
+      <div className="relative z-10 max-w-350 mx-auto px-6 lg:px-12">
         {/* Header */}
         <div className="mb-16 lg:mb-24">
           <span className="inline-flex items-center gap-3 text-sm font-mono text-background/50 mb-6">
@@ -155,7 +155,7 @@ export function HowItWorksSection() {
               </div>
 
               {/* Code content */}
-              <div className="p-8 font-mono text-sm min-h-[280px]">
+              <div className="p-8 font-mono text-sm min-h-70">
                 <pre className="text-background/70">
                   {steps[activeStep].code.split('\n').map((line, lineIndex) => (
                     <div 

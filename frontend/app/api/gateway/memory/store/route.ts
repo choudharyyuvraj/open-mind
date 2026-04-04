@@ -8,6 +8,16 @@ import { MAX_ACTIVITY_STORED_CONTENT } from "@/lib/memory-ingest-limits"
 
 export const runtime = "nodejs"
 
+function firstNonEmptyString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim()
+      if (trimmed) return trimmed
+    }
+  }
+  return ""
+}
+
 export async function POST(request: Request) {
   const auth = await getGatewayAuth(request)
   if (auth instanceof NextResponse) return auth
@@ -28,11 +38,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "content is required." }, { status: 400 })
   }
 
-  const cursorGenerationId =
-    typeof body.cursor_generation_id === "string" ? body.cursor_generation_id.trim() : ""
-  const cursorConversationId =
-    typeof body.cursor_conversation_id === "string" ? body.cursor_conversation_id.trim() : ""
-
   const rawAuth =
     typeof body.auth_metadata === "object" &&
     body.auth_metadata !== null &&
@@ -40,11 +45,36 @@ export async function POST(request: Request) {
       ? { ...(body.auth_metadata as Record<string, unknown>) }
       : {}
 
-  if (cursorGenerationId) {
-    rawAuth.cursor_generation_id = cursorGenerationId
+  const generationId = firstNonEmptyString(
+    body.generation_id,
+    body.cursor_generation_id,
+    rawAuth.generation_id,
+    rawAuth.cursor_generation_id,
+    rawAuth.mcp_generation_id,
+  )
+  const conversationId = firstNonEmptyString(
+    body.conversation_id,
+    body.cursor_conversation_id,
+    rawAuth.conversation_id,
+    rawAuth.cursor_conversation_id,
+    rawAuth.mcp_conversation_id,
+  )
+  const clientType = firstNonEmptyString(body.client_type, rawAuth.client_type)
+  const source = firstNonEmptyString(body.source, rawAuth.source)
+
+  if (generationId) {
+    rawAuth.generation_id = generationId
+    rawAuth.cursor_generation_id = generationId
   }
-  if (cursorConversationId) {
-    rawAuth.cursor_conversation_id = cursorConversationId
+  if (conversationId) {
+    rawAuth.conversation_id = conversationId
+    rawAuth.cursor_conversation_id = conversationId
+  }
+  if (clientType) {
+    rawAuth.client_type = clientType
+  }
+  if (source) {
+    rawAuth.source = source
   }
 
   const payload = {
@@ -82,8 +112,12 @@ export async function POST(request: Request) {
       storedContent: content.slice(0, MAX_ACTIVITY_STORED_CONTENT),
       contentLength: content.length,
       contentTruncated: truncated,
-      ...(cursorGenerationId ? { cursorGenerationId } : {}),
-      ...(cursorConversationId ? { cursorConversationId } : {}),
+      ...(generationId ? { generationId, cursorGenerationId: generationId } : {}),
+      ...(conversationId
+        ? { conversationId, cursorConversationId: conversationId }
+        : {}),
+      ...(clientType ? { clientType } : {}),
+      ...(source ? { source } : {}),
     },
   })
 

@@ -324,7 +324,7 @@ export function FeaturesSection() {
       ref={sectionRef}
       className="relative py-24 lg:py-32"
     >
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+      <div className="max-w-350 mx-auto px-6 lg:px-12">
         {/* Header */}
         <div className="mb-16 lg:mb-24">
           <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">

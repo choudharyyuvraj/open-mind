@@ -17,7 +17,7 @@ pnpm add @mindmesh/sdk`,
     code: `import { Mindmesh } from '@mindmesh/sdk'
 
 const memory = new Mindmesh({
-  apiKey: process.env.MINDMESH_KEY
+  apiKey: process.env.MINDMESH_API_KEY
 })
 
 await memory.store({
@@ -112,7 +112,7 @@ export function DevelopersSection() {
   return (
     <section id="developers" ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: codeAnimationStyles }} />
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+      <div className="max-w-350 mx-auto px-6 lg:px-12">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
           {/* Left: Content */}
           <div
@@ -193,7 +193,7 @@ export function DevelopersSection() {
               </div>
               
               {/* Code content */}
-              <div className="p-8 font-mono text-sm bg-foreground/[0.01] min-h-[220px]">
+              <div className="p-8 font-mono text-sm bg-foreground/1 min-h-55">
                 <pre className="text-foreground/80">
                   {codeExamples[activeTab].code.split('\n').map((line, lineIndex) => (
                     <div 

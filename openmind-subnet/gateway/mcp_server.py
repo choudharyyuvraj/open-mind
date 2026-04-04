@@ -36,6 +36,7 @@ Claude Desktop config example (BFF mode):
 """
 
 import argparse
+import hashlib
 import json
 import os
 from typing import Any, Dict, List, Optional
@@ -99,6 +100,14 @@ def _full_url(gateway_path: str) -> str:
     return f"{_base_url()}{_resolved_path(gateway_path)}"
 
 
+def _derived_session_id() -> Optional[str]:
+    """Create a stable default session id for BFF mode when the client omits one."""
+    if not _bff_url or not _api_key:
+        return None
+    digest = hashlib.sha256(_api_key.encode("utf-8")).hexdigest()[:24]
+    return f"mcp_{digest}"
+
+
 async def _post(path: str, payload: dict) -> dict:
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(_full_url(path), json=payload, headers=_http_headers())
@@ -124,6 +133,10 @@ async def openmind_store(
     role: str = "user",
     event_at: Optional[str] = None,
     multimodal_type: Optional[str] = None,
+    generation_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    client_type: str = "mcp",
+    source: str = "claude",
 ) -> str:
     """Store a memory chunk in the OpenMind decentralised memory layer.
 
@@ -139,6 +152,10 @@ async def openmind_store(
         role: Who produced the content — "user", "assistant", or "system".
         event_at: ISO-8601 timestamp of when the described event occurred (optional).
         multimodal_type: Optional — "text", "image", or "pdf".
+        generation_id: Optional step id used to group related events in dashboard explorer.
+        conversation_id: Optional conversation id used for thread grouping.
+        client_type: Client family sending the request (e.g. "mcp", "cursor").
+        source: Source application label (e.g. "claude", "cursor").
     """
     payload: dict = {
         "content": content,
@@ -148,8 +165,24 @@ async def openmind_store(
     }
     if session_id:
         payload["session_id"] = session_id
-    elif not _bff_url:
-        raise ValueError("session_id is required in direct validator mode; use --bff-url or pass session_id.")
+    else:
+        derived = _derived_session_id()
+        if derived:
+            payload["session_id"] = derived
+        else:
+            raise ValueError("session_id is required in direct validator mode; use --bff-url or pass session_id.")
+
+    auth_metadata: Dict[str, Any] = {
+        "client_type": client_type,
+        "source": source,
+    }
+    if generation_id:
+        auth_metadata["generation_id"] = generation_id
+        auth_metadata["mcp_generation_id"] = generation_id
+    if conversation_id:
+        auth_metadata["conversation_id"] = conversation_id
+        auth_metadata["mcp_conversation_id"] = conversation_id
+    payload["auth_metadata"] = auth_metadata
 
     result = await _post("/v1/memory/store", payload)
     return json.dumps(result, indent=2)
@@ -161,6 +194,10 @@ async def openmind_query(
     session_id: Optional[str] = None,
     top_k: int = 10,
     smart: bool = True,
+    generation_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    client_type: str = "mcp",
+    source: str = "claude",
 ) -> str:
     """Search and retrieve memories from the OpenMind memory layer.
 
@@ -175,6 +212,10 @@ async def openmind_query(
         query: Natural language search query.
         top_k: Maximum number of results to return.
         smart: Use two-phase retrieval (default True). Set False for legacy mode.
+        generation_id: Optional step id used to group related events in dashboard explorer.
+        conversation_id: Optional conversation id used for thread grouping.
+        client_type: Client family sending the request (e.g. "mcp", "cursor").
+        source: Source application label (e.g. "claude", "cursor").
     """
     payload: dict = {
         "query": query,
@@ -183,8 +224,24 @@ async def openmind_query(
     }
     if session_id:
         payload["session_id"] = session_id
-    elif not _bff_url:
-        raise ValueError("session_id is required in direct validator mode; use --bff-url or pass session_id.")
+    else:
+        derived = _derived_session_id()
+        if derived:
+            payload["session_id"] = derived
+        else:
+            raise ValueError("session_id is required in direct validator mode; use --bff-url or pass session_id.")
+
+    auth_metadata: Dict[str, Any] = {
+        "client_type": client_type,
+        "source": source,
+    }
+    if generation_id:
+        auth_metadata["generation_id"] = generation_id
+        auth_metadata["mcp_generation_id"] = generation_id
+    if conversation_id:
+        auth_metadata["conversation_id"] = conversation_id
+        auth_metadata["mcp_conversation_id"] = conversation_id
+    payload["auth_metadata"] = auth_metadata
 
     result = await _post("/v1/memory/query", payload)
     return json.dumps(result, indent=2)
@@ -284,6 +341,8 @@ async def openmind_shared_query(
     query: Optional[str] = None,
     top_k: int = 10,
     author: Optional[str] = None,
+    client_type: str = "mcp",
+    source: str = "claude",
 ) -> str:
     """Query a shared memory space in OpenMind.
 
@@ -293,6 +352,8 @@ async def openmind_shared_query(
         query: Natural language search query.
         top_k: Maximum results.
         author: Wallet address or agent identifier for access control.
+        client_type: Client family sending the request.
+        source: Source application label.
     """
     result = await _post("/v1/space/query", {
         "session_id": session_id,
@@ -300,6 +361,10 @@ async def openmind_shared_query(
         "query": query,
         "top_k": top_k,
         "author": author,
+        "auth_metadata": {
+            "client_type": client_type,
+            "source": source,
+        },
     })
     return json.dumps(result, indent=2)
 
@@ -361,10 +426,14 @@ def main():
     bff = (args.bff_url or os.environ.get("OPENMIND_BFF_URL", "") or "").strip()
     if bff:
         _bff_url = bff.rstrip("/")
-    key = (args.api_key or os.environ.get("OPENMIND_API_KEY", "")).strip()
+    key = (
+        args.api_key
+        or os.environ.get("OPENMIND_API_KEY", "")
+        or os.environ.get("MINDMESH_API_KEY", "")
+    ).strip()
     if bff and not key:
         parser.error(
-            "BFF mode requires OPENMIND_API_KEY (or --api-key). "
+            "BFF mode requires OPENMIND_API_KEY/MINDMESH_API_KEY (or --api-key). "
             "Set BFF via --bff-url or OPENMIND_BFF_URL."
         )
     _api_key = key or None

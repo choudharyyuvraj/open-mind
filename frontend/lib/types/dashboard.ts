@@ -65,8 +65,12 @@ export type MemoryIndexItem = {
   /** True when full text was persisted (new ingests); older rows open to summary only. */
   hasStoredContent: boolean
   /** Cursor Composer step id — links user prompt, file edits, and assistant reply in one card. */
+  generationId?: string | null
+  conversationId?: string | null
   cursorGenerationId: string | null
   cursorConversationId: string | null
+  clientType?: string | null
+  source?: string | null
 }
 
 /** List row after grouping adjacent hook captures (user + assistant) in Memory Explorer. */
@@ -111,8 +115,12 @@ export type MemoryIngestDetail = {
   contentTruncated: boolean
   assetId: string | null
   filename: string | null
+  generationId?: string | null
+  conversationId?: string | null
   cursorGenerationId?: string | null
   cursorConversationId?: string | null
+  clientType?: string | null
+  source?: string | null
 }
 
 export type NetworkChallengeMode = {

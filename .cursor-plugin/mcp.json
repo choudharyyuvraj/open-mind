@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "openmind": {
+      "command": "python",
+      "args": [
+        "-m",
+        "gateway.mcp_server",
+        "--bff-url",
+        "${OPENMIND_BFF_URL}",
+        "--api-key",
+        "${MINDMESH_API_KEY}"
+      ],
+      "env": {
+        "PYTHONPATH": "${OPENMIND_SUBNET_PYTHONPATH}"
+      }
+    }
+  }
+}

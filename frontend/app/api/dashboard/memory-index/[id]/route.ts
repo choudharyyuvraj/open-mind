@@ -6,6 +6,16 @@ import type { MemoryIngestDetail } from "@/lib/types/dashboard"
 
 export const runtime = "nodejs"
 
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim()
+      if (trimmed) return trimmed
+    }
+  }
+  return null
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
@@ -56,10 +66,36 @@ export async function GET(
     contentTruncated: meta.contentTruncated === true,
     assetId: typeof meta.assetId === "string" ? meta.assetId : null,
     filename: typeof meta.filename === "string" ? meta.filename : null,
-    cursorGenerationId:
-      typeof meta.cursorGenerationId === "string" ? meta.cursorGenerationId : null,
-    cursorConversationId:
-      typeof meta.cursorConversationId === "string" ? meta.cursorConversationId : null,
+    generationId: firstNonEmptyString(
+      meta.generationId,
+      meta.generation_id,
+      meta.cursorGenerationId,
+      meta.cursor_generation_id,
+      meta.mcp_generation_id,
+    ),
+    conversationId: firstNonEmptyString(
+      meta.conversationId,
+      meta.conversation_id,
+      meta.cursorConversationId,
+      meta.cursor_conversation_id,
+      meta.mcp_conversation_id,
+    ),
+    cursorGenerationId: firstNonEmptyString(
+      meta.generationId,
+      meta.generation_id,
+      meta.cursorGenerationId,
+      meta.cursor_generation_id,
+      meta.mcp_generation_id,
+    ),
+    cursorConversationId: firstNonEmptyString(
+      meta.conversationId,
+      meta.conversation_id,
+      meta.cursorConversationId,
+      meta.cursor_conversation_id,
+      meta.mcp_conversation_id,
+    ),
+    clientType: firstNonEmptyString(meta.clientType, meta.client_type),
+    source: firstNonEmptyString(meta.source),
   }
 
   return NextResponse.json(body)

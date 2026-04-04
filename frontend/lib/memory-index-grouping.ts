@@ -72,13 +72,13 @@ export function buildMemoryIndexList(items: MemoryIndexItem[]): MemoryIndexListE
   const withGen: MemoryIndexItem[] = []
   const withoutGen: MemoryIndexItem[] = []
   for (const it of items) {
-    if (it.cursorGenerationId) withGen.push(it)
+    if (it.generationId || it.cursorGenerationId) withGen.push(it)
     else withoutGen.push(it)
   }
 
   const byGen = new Map<string, MemoryIndexItem[]>()
   for (const it of withGen) {
-    const g = it.cursorGenerationId as string
+    const g = (it.generationId || it.cursorGenerationId) as string
     const arr = byGen.get(g) ?? []
     arr.push(it)
     byGen.set(g, arr)
@@ -90,7 +90,9 @@ export function buildMemoryIndexList(items: MemoryIndexItem[]): MemoryIndexListE
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     )
     const conversationId =
-      sorted.map((m) => m.cursorConversationId).find((c) => c && c.length > 0) ?? null
+      sorted
+        .map((m) => m.conversationId || m.cursorConversationId)
+        .find((c) => c && c.length > 0) ?? null
     threadEntries.push({ kind: "thread", generationId, conversationId, members: sorted })
   }
 

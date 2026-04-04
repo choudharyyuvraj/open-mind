@@ -36,16 +36,20 @@ export function ApiMcpClient() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await apiFetch("/api/auth/api-keys")
-    if (!res.ok) {
-      setLoading(false)
+    try {
+      const res = await apiFetch("/api/auth/api-keys")
+      if (!res.ok) {
+        toast.error("Could not load API keys.")
+        return
+      }
+      const data = (await res.json()) as { keys: ApiKeyRow[]; quotaPerDay: number | null }
+      setKeys(data.keys ?? [])
+      setQuotaPerDay(data.quotaPerDay ?? null)
+    } catch {
       toast.error("Could not load API keys.")
-      return
+    } finally {
+      setLoading(false)
     }
-    const data = (await res.json()) as { keys: ApiKeyRow[]; quotaPerDay: number | null }
-    setKeys(data.keys ?? [])
-    setQuotaPerDay(data.quotaPerDay ?? null)
-    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -54,10 +58,14 @@ export function ApiMcpClient() {
 
   useEffect(() => {
     void (async () => {
-      const res = await apiFetch("/api/me")
-      const data = (await res.json().catch(() => ({}))) as { defaultMemorySessionId?: string }
-      if (res.ok && data.defaultMemorySessionId) {
-        setDefaultMemorySessionId(data.defaultMemorySessionId)
+      try {
+        const res = await apiFetch("/api/me")
+        const data = (await res.json().catch(() => ({}))) as { defaultMemorySessionId?: string }
+        if (res.ok && data.defaultMemorySessionId) {
+          setDefaultMemorySessionId(data.defaultMemorySessionId)
+        }
+      } catch {
+        // Ignore; the key list can still load without this optional hint.
       }
     })()
   }, [])

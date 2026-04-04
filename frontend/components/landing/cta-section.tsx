@@ -33,7 +33,7 @@ export function CtaSection() {
 
   return (
     <section ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+      <div className="max-w-350 mx-auto px-6 lg:px-12">
         <div
           className={`relative border border-foreground transition-all duration-1000 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
@@ -88,7 +88,7 @@ export function CtaSection() {
               </div>
 
               {/* Right animation */}
-              <div className="hidden lg:flex items-center justify-center w-[500px] h-[500px] -mr-16">
+              <div className="hidden lg:flex items-center justify-center w-125 h-125 -mr-16">
                 <AnimatedTetrahedron />
               </div>
             </div>

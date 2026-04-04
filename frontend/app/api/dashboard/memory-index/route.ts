@@ -14,6 +14,16 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim()
+      if (trimmed) return trimmed
+    }
+  }
+  return null
+}
+
 export async function GET(request: Request) {
   const session = await getSessionUser()
   if (!session) {
@@ -70,6 +80,20 @@ export async function GET(request: Request) {
   const items = slice.map((row) => {
     const meta = row.metadata ?? {}
     const stored = typeof meta.storedContent === "string" ? meta.storedContent : ""
+    const generationId = firstNonEmptyString(
+      meta.generationId,
+      meta.generation_id,
+      meta.cursorGenerationId,
+      meta.cursor_generation_id,
+      meta.mcp_generation_id,
+    )
+    const conversationId = firstNonEmptyString(
+      meta.conversationId,
+      meta.conversation_id,
+      meta.cursorConversationId,
+      meta.cursor_conversation_id,
+      meta.mcp_conversation_id,
+    )
     return {
       id: String(row._id),
       createdAt: row.createdAt.toISOString(),
@@ -79,10 +103,12 @@ export async function GET(request: Request) {
       gatewayOk: typeof meta.ok === "boolean" ? meta.ok : null,
       gatewayStatus: typeof meta.gatewayStatus === "number" ? meta.gatewayStatus : null,
       hasStoredContent: stored.length > 0,
-      cursorGenerationId:
-        typeof meta.cursorGenerationId === "string" ? meta.cursorGenerationId : null,
-      cursorConversationId:
-        typeof meta.cursorConversationId === "string" ? meta.cursorConversationId : null,
+      generationId,
+      conversationId,
+      cursorGenerationId: generationId,
+      cursorConversationId: conversationId,
+      clientType: firstNonEmptyString(meta.clientType, meta.client_type),
+      source: firstNonEmptyString(meta.source),
     }
   })
 

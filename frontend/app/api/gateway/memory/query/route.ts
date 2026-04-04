@@ -6,6 +6,16 @@ import { subnetSessionIdForUser } from "@/lib/subnet-session"
 
 export const runtime = "nodejs"
 
+function firstNonEmptyString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim()
+      if (trimmed) return trimmed
+    }
+  }
+  return ""
+}
+
 export async function POST(request: Request) {
   const auth = await getGatewayAuth(request)
   if (auth instanceof NextResponse) return auth
@@ -21,6 +31,28 @@ export async function POST(request: Request) {
   }
 
   const userId = String(auth.userId)
+  const rawAuth =
+    typeof body.auth_metadata === "object" &&
+    body.auth_metadata !== null &&
+    !Array.isArray(body.auth_metadata)
+      ? (body.auth_metadata as Record<string, unknown>)
+      : {}
+  const generationId = firstNonEmptyString(
+    body.generation_id,
+    body.cursor_generation_id,
+    rawAuth.generation_id,
+    rawAuth.cursor_generation_id,
+    rawAuth.mcp_generation_id,
+  )
+  const conversationId = firstNonEmptyString(
+    body.conversation_id,
+    body.cursor_conversation_id,
+    rawAuth.conversation_id,
+    rawAuth.cursor_conversation_id,
+    rawAuth.mcp_conversation_id,
+  )
+  const clientType = firstNonEmptyString(body.client_type, rawAuth.client_type)
+  const source = firstNonEmptyString(body.source, rawAuth.source)
   const payload = {
     session_id: typeof body.session_id === "string" ? body.session_id : subnetSessionIdForUser(userId),
     query: typeof body.query === "string" ? body.query : "",
@@ -45,7 +77,18 @@ export async function POST(request: Request) {
       typeof payload.query === "string" && payload.query.length > 0
         ? payload.query.slice(0, 160)
         : "Hybrid retrieval",
-    metadata: { ok: out.ok, latencyMs, gatewayStatus: out.status },
+    metadata: {
+      ok: out.ok,
+      latencyMs,
+      gatewayStatus: out.status,
+      sessionId: payload.session_id,
+      ...(generationId ? { generationId, cursorGenerationId: generationId } : {}),
+      ...(conversationId
+        ? { conversationId, cursorConversationId: conversationId }
+        : {}),
+      ...(clientType ? { clientType } : {}),
+      ...(source ? { source } : {}),
+    },
   })
 
   return NextResponse.json(out.data, { status: out.ok ? 200 : out.status })
