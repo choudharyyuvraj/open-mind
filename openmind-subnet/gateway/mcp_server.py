@@ -48,6 +48,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 # Host/Origin headers may differ from localhost defaults.
 mcp = FastMCP(
     "OpenMind",
+    stateless_http=True,
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=False,
     ),
