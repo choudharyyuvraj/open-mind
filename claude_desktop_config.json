@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mindmesh": {
+      "command": "python",
+      "args": [
+        "X:/OpenMind-main/OpenMind-main/openmind-subnet/gateway/mcp_server.py",
+        "--bff-url",
+        "https://frontend-zeta-rosy-10.vercel.app",
+        "--api-key",
+        "om_live_TvfVF3Nf_Xk1R00uZ9hY9-6NxBCl0LAmiMjGIxwlkgo"
+      ]
+    }
+  }
+}
