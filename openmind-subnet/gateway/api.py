@@ -49,8 +49,9 @@ app = FastAPI(
 )
 
 # Expose a remote MCP endpoint for connector-based clients (Claude, etc.).
-# This keeps existing /v1 REST routes unchanged while adding URL-based MCP transport.
-app.mount("/mcp", mcp.streamable_http_app())
+# FastMCP's streamable HTTP app already serves at "/mcp", so mount at root
+# to expose exactly "/mcp" (not "/mcp/mcp").
+app.mount("/", mcp.streamable_http_app())
 
 app.add_middleware(
     CORSMiddleware,
