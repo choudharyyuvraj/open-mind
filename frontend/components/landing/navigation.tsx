@@ -46,8 +46,7 @@ export function Navigation() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <span className={`font-display tracking-tight transition-all duration-500 ${isScrolled ? "text-xl" : "text-2xl"}`}>OpenMind</span>
-            <span className={`text-muted-foreground font-mono transition-all duration-500 ${isScrolled ? "text-[10px] mt-0.5" : "text-xs mt-1"}`}>AI</span>
+            <span className={`font-display tracking-tight transition-all duration-500 ${isScrolled ? "text-xl" : "text-2xl"}`}>mindmesh</span>
           </Link>
 
           {/* Desktop Navigation */}

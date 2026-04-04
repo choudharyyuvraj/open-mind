@@ -50,8 +50,7 @@ export function FooterSection() {
             {/* Brand Column */}
             <div className="col-span-2">
               <a href="#" className="inline-flex items-center gap-2 mb-6">
-                <span className="text-2xl font-display">OpenMind</span>
-                <span className="text-xs text-muted-foreground font-mono">AI</span>
+                <span className="text-2xl font-display">mindmesh</span>
               </a>
 
               <p className="text-muted-foreground leading-relaxed mb-8 max-w-xs">
@@ -102,7 +101,7 @@ export function FooterSection() {
         {/* Bottom Bar */}
         <div className="py-8 border-t border-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            2025 OpenMind. Built for the agentic era.
+            2025 mindmesh. Built for the agentic era.
           </p>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">

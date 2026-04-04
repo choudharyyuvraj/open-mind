@@ -158,7 +158,7 @@ export function LoginForm() {
           className="mb-10 inline-flex items-center gap-2 font-mono text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          Back to OpenMind
+          Back to mindmesh
         </Link>
 
         <div className="mb-8">
@@ -171,7 +171,7 @@ export function LoginForm() {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
             {AUTH_OPEN
-              ? "Use your email or phone number and password to access your OpenMind dashboard."
+              ? "Use your email or phone number and password to access your mindmesh dashboard."
               : "Dashboard access is limited to people on our waitlist or whitelist while we run closed testing."}
           </p>
         </div>

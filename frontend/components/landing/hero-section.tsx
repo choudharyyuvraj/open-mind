@@ -123,7 +123,7 @@ export function HeroSection() {
               asChild
             >
               <Link href="/login">
-                Get Started with OpenMind
+                Get Started with mindmesh
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>

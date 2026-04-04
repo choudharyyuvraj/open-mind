@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 const testimonials = [
   {
-    quote: "OpenMind solved our biggest problem: agents forgetting context. Now our AI systems maintain perfect memory across sessions.",
+    quote: "mindmesh solved our biggest problem: agents forgetting context. Now our AI systems maintain perfect memory across sessions.",
     author: "Sarah Chen",
     role: "Head of AI",
     company: "Bittensor Labs",

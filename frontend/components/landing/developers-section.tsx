@@ -6,18 +6,18 @@ import { Copy, Check } from "lucide-react";
 const codeExamples = [
   {
     label: "Install",
-    code: `npm install @openmind/sdk
+    code: `npm install @mindmesh/sdk
 
 # or
-yarn add @openmind/sdk
-pnpm add @openmind/sdk`,
+yarn add @mindmesh/sdk
+pnpm add @mindmesh/sdk`,
   },
   {
     label: "Store Memory",
-    code: `import { OpenMind } from '@openmind/sdk'
+    code: `import { Mindmesh } from '@mindmesh/sdk'
 
-const memory = new OpenMind({
-  apiKey: process.env.OPENMIND_KEY
+const memory = new Mindmesh({
+  apiKey: process.env.MINDMESH_KEY
 })
 
 await memory.store({

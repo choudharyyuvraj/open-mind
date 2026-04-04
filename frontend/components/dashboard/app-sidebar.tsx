@@ -31,10 +31,7 @@ export function AppSidebar() {
           className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none ring-sidebar-ring focus-visible:ring-2"
         >
           <span className="font-display text-lg tracking-tight text-sidebar-foreground">
-            OpenMind
-          </span>
-          <span className="font-mono text-[10px] text-sidebar-foreground/60">
-            AI
+            mindmesh
           </span>
         </Link>
         <p className="px-2 pb-1 text-xs text-sidebar-foreground/60">

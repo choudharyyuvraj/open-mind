@@ -96,7 +96,7 @@ export function DashboardHeader({ pathname }: DashboardHeaderProps) {
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href="/dashboard" className="font-mono text-xs text-muted-foreground">
-                OpenMind
+                mindmesh
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>

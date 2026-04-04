@@ -6,7 +6,7 @@ import { ArrowRight, Check } from "lucide-react";
 const plans = [
   {
     name: "Open",
-    description: "For developers building with OpenMind",
+    description: "For developers building with mindmesh",
     price: { monthly: 0, annual: 0 },
     features: [
       "Full API access",

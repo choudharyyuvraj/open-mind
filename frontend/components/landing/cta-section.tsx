@@ -59,7 +59,7 @@ export function CtaSection() {
                 </h2>
 
                 <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-xl">
-                  OpenMind gives your AI systems durable memory, verifiable provenance, and production-grade retrieval from day one.
+                  mindmesh gives your AI systems durable memory, verifiable provenance, and production-grade retrieval from day one.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-start gap-4">
@@ -69,7 +69,7 @@ export function CtaSection() {
                     asChild
                   >
                     <Link href="/login">
-                      Start Building with OpenMind
+                      Start Building with mindmesh
                       <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </Button>

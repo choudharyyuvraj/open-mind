@@ -23,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenMind - Persistent Memory for AI Agents',
+  title: 'mindmesh - Persistent Memory for AI Agents',
   description: 'Decentralized, encrypted memory infrastructure for agentic systems. Build AI that remembers with provenance, hybrid retrieval, and durable workflows.',
   generator: 'v0.app',
 }
