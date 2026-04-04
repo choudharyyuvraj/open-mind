@@ -70,6 +70,16 @@ _bff_url: Optional[str] = None
 _api_key: Optional[str] = None
 _api_url: str = "http://localhost:8090"
 
+# When this module is imported by the FastAPI gateway (remote /mcp mode),
+# main() is not called. Seed runtime config from env so MCP can still run in
+# BFF mode and route writes through frontend /api/gateway/* endpoints.
+_env_bff = (os.environ.get("OPENMIND_BFF_URL", "") or "").strip()
+if _env_bff:
+    _bff_url = _env_bff.rstrip("/")
+_env_key = (os.environ.get("OPENMIND_API_KEY", "") or "").strip()
+if _env_key:
+    _api_key = _env_key
+
 
 def _resolved_path(gateway_path: str) -> str:
     if _bff_url:
