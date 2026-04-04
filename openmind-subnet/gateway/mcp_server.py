@@ -42,8 +42,16 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
-mcp = FastMCP("OpenMind")
+# Allow reverse-proxy/front-door deployments (Render/Vercel connectors) where
+# Host/Origin headers may differ from localhost defaults.
+mcp = FastMCP(
+    "OpenMind",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+    ),
+)
 
 # Gateway OpenAPI paths -> Next.js ``/api/gateway/*`` paths (must stay in sync with the app).
 _GATEWAY_TO_BFF: Dict[str, str] = {

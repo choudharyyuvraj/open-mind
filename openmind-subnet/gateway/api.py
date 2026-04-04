@@ -34,12 +34,19 @@ from openmind.local_processor import process_request
 from openmind.protocol import OpenMindRequest
 
 
+_mcp_http_app = mcp.streamable_http_app()
+_mcp_streamable_endpoint = _mcp_http_app.routes[0].endpoint
+
+
 @asynccontextmanager
 async def _gateway_lifespan(app: FastAPI):
     logging.getLogger("uvicorn.error").info(
         "OpenMind gateway running in local mode (no Bittensor dependency)."
     )
-    yield
+    # FastMCP streamable HTTP transport requires its session manager task-group
+    # to be started during app lifespan; otherwise /mcp returns 500.
+    async with _mcp_streamable_endpoint.session_manager.run():
+        yield
 
 
 app = FastAPI(
@@ -49,41 +56,32 @@ app = FastAPI(
 )
 
 # Expose MCP transport for connector-based clients.
-# FastMCP's HTTP app uses an internal "/mcp" route, so mounting at "/mcp"
-# exposes the handler at "/mcp/mcp".
-app.mount("/mcp", mcp.streamable_http_app())
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-_STATIC_DIR = Path(__file__).parent / "static"
-_chat_env_loaded = False
+# We proxy /mcp to the FastMCP ASGI app in-process (no outbound self-HTTP),
+# which avoids DNS issues and keeps /v1 REST routes unaffected.
 
 
 @app.api_route("/mcp", methods=["GET", "POST", "OPTIONS"])
-async def mcp_connector_alias(request: Request) -> Response:
-    """Compatibility alias so connector clients can call `/mcp` directly.
-
-    Internally forwards to the mounted FastMCP route (`/mcp/mcp`).
-    """
+@app.api_route("/mcp/", methods=["GET", "POST", "OPTIONS"])
+async def mcp_entrypoint(request: Request) -> Response:
     import httpx
 
-    target_url = str(request.url.replace(path="/mcp/mcp"))
     body = await request.body()
     headers = {
         k: v
         for k, v in request.headers.items()
-        if k.lower() not in {"host", "content-length"}
+        if k.lower() not in {"content-length"}
     }
 
-    async with httpx.AsyncClient(timeout=60.0, follow_redirects=False) as client:
+    transport = httpx.ASGITransport(app=_mcp_http_app)
+    incoming_host = request.headers.get("host", "localhost")
+    incoming_scheme = request.url.scheme or "http"
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url=f"{incoming_scheme}://{incoming_host}",
+    ) as client:
         upstream = await client.request(
             method=request.method,
-            url=target_url,
+            url="/mcp",
             headers=headers,
             params=request.query_params,
             content=body if body else None,
@@ -99,6 +97,16 @@ async def mcp_connector_alias(request: Request) -> Response:
         status_code=upstream.status_code,
         headers=passthrough_headers,
     )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_STATIC_DIR = Path(__file__).parent / "static"
+_chat_env_loaded = False
 
 
 @app.get("/", include_in_schema=False)
