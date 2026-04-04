@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -48,10 +48,10 @@ app = FastAPI(
     lifespan=_gateway_lifespan,
 )
 
-# Expose a remote MCP endpoint for connector-based clients (Claude, etc.).
-# FastMCP's streamable HTTP app already serves at "/mcp", so mount at root
-# to expose exactly "/mcp" (not "/mcp/mcp").
-app.mount("/", mcp.streamable_http_app())
+# Expose MCP transport for connector-based clients.
+# FastMCP's HTTP app uses an internal "/mcp" route, so mounting at "/mcp"
+# exposes the handler at "/mcp/mcp".
+app.mount("/mcp", mcp.streamable_http_app())
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,6 +62,43 @@ app.add_middleware(
 
 _STATIC_DIR = Path(__file__).parent / "static"
 _chat_env_loaded = False
+
+
+@app.api_route("/mcp", methods=["GET", "POST", "OPTIONS"])
+async def mcp_connector_alias(request: Request) -> Response:
+    """Compatibility alias so connector clients can call `/mcp` directly.
+
+    Internally forwards to the mounted FastMCP route (`/mcp/mcp`).
+    """
+    import httpx
+
+    target_url = str(request.url.replace(path="/mcp/mcp"))
+    body = await request.body()
+    headers = {
+        k: v
+        for k, v in request.headers.items()
+        if k.lower() not in {"host", "content-length"}
+    }
+
+    async with httpx.AsyncClient(timeout=60.0, follow_redirects=False) as client:
+        upstream = await client.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            params=request.query_params,
+            content=body if body else None,
+        )
+
+    passthrough_headers: Dict[str, str] = {}
+    for h in ("content-type", "cache-control", "www-authenticate"):
+        if h in upstream.headers:
+            passthrough_headers[h] = upstream.headers[h]
+
+    return Response(
+        content=upstream.content,
+        status_code=upstream.status_code,
+        headers=passthrough_headers,
+    )
 
 
 @app.get("/", include_in_schema=False)
