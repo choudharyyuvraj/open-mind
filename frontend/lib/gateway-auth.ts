@@ -41,7 +41,7 @@ export function gatewayUnauthorized(request: Request) {
       ...(hasOmLiveBearer
         ? {
             hint:
-              "This route accepts a dashboard API key (Bearer om_live_…), not OpenAI. Rejected: wrong or revoked key, key missing from MongoDB used by the app, or API_KEY_HASH_PEPPER changed since the key was created. Fix: set OPENMIND_API_KEY in MCP to a key from Dashboard → API & MCP; keep the same pepper across restarts; create a new key if you rotated pepper.",
+              "This route accepts a dashboard API key (Bearer om_live_…), not OpenAI. Rejected: wrong or revoked key, key missing from MongoDB used by the app, or API_KEY_HASH_PEPPER changed since the key was created. Fix: set MINDMESH_API_KEY in MCP to a key from Dashboard → API & MCP; keep the same pepper across restarts; create a new key if you rotated pepper.",
           }
         : {}),
     },

@@ -7,9 +7,9 @@ const steps = [
     number: "I",
     title: "Ingest",
     description: "Agent data is encrypted client-side and stored as durable shards on Bittensor.",
-    code: `import { OpenMind } from '@openmind/sdk'
+    code: `import { Mindmesh } from '@mindmesh/sdk'
 
-const memory = new OpenMind({
+const memory = new Mindmesh({
   encrypt: true,
   shards: 'auto',
   network: 'bittensor'
@@ -29,7 +29,7 @@ const memory = new OpenMind({
   {
     number: "III",
     title: "Retrieve + Verify",
-    description: "OpenMind returns high-relevance context with metadata, timestamps, and full provenance.",
+    description: "mindmesh returns high-relevance context with metadata, timestamps, and full provenance.",
     code: `const context = await memory.retrieve({
   query: agent.input,
   hybrid: true,
@@ -88,7 +88,7 @@ export function HowItWorksSection() {
         <div className="mb-16 lg:mb-24">
           <span className="inline-flex items-center gap-3 text-sm font-mono text-background/50 mb-6">
             <span className="w-8 h-px bg-background/30" />
-            How OpenMind Works
+            How mindmesh Works
           </span>
           <h2
             className={`text-4xl lg:text-6xl font-display tracking-tight transition-all duration-700 ${
