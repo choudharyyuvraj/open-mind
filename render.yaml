@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: openmind-gateway
+    runtime: python
+    rootDir: openmind-subnet
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn gateway.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /v1/health
+    autoDeploy: true
