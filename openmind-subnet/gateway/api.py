@@ -71,6 +71,16 @@ async def mcp_entrypoint(request: Request) -> Response:
         for k, v in request.headers.items()
         if k.lower() not in {"content-length"}
     }
+    # Some MCP clients omit the required streamable Accept value.
+    # Normalize case-insensitively and ensure upstream always sees text/event-stream.
+    accept = ""
+    for k in list(headers.keys()):
+        if k.lower() == "accept":
+            accept = headers.pop(k)
+            break
+    if "text/event-stream" not in accept.lower():
+        accept = f"{accept}, text/event-stream" if accept else "application/json, text/event-stream"
+    headers["Accept"] = accept
 
     transport = httpx.ASGITransport(app=_mcp_http_app)
     incoming_host = request.headers.get("host", "localhost")

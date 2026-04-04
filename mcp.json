@@ -6,12 +6,12 @@
         "-m",
         "gateway.mcp_server",
         "--bff-url",
-        "${OPENMIND_BFF_URL}",
+        "http://127.0.0.1:3000",
         "--api-key",
         "${MINDMESH_API_KEY}"
       ],
       "env": {
-        "PYTHONPATH": "${OPENMIND_SUBNET_PYTHONPATH}"
+        "PYTHONPATH": "X:/OpenMind-main/OpenMind-main/openmind-subnet"
       }
     }
   }
