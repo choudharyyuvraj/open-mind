@@ -116,6 +116,31 @@ $env:MINDMESH_API_KEY = "om_live_YOUR_KEY"
 
 If Cursor has no MCP UI, this launch method is required so env vars are inherited.
 
+### 7.1 Claude Desktop over a remote MCP server
+
+Claude Desktop cannot use a raw remote MCP URL directly in `claude_desktop_config.json`. Use the `mcp-remote` wrapper so Claude can launch a local stdio process that connects to the remote server for you.
+
+Example:
+
+```json
+{
+  "mcpServers": {
+    "openmind": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://open-mind-85nx.onrender.com/mcp"
+      }
+    }
+  }
+}
+```
+
+If you are using ngrok instead of Render, replace the URL with your ngrok HTTPS URL. If the tunnel shows a browser warning page, add the `ngrok-skip-browser-warning: true` header in the remote transport wrapper if your client supports custom headers.
+
+This remote wrapper path is separate from the local BFF mode. In local BFF mode, `session_id` is derived automatically from the API key when the client omits it.
+
 ## 8) Create API Key
 
 - Open dashboard: `http://127.0.0.1:3000`

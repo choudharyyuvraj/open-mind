@@ -1,14 +1,24 @@
 {
+  "preferences": {
+    "coworkWebSearchEnabled": true,
+    "ccdScheduledTasksEnabled": false,
+    "coworkScheduledTasksEnabled": false
+  },
   "mcpServers": {
-    "mindmesh": {
+    "openmind": {
       "command": "python",
       "args": [
-        "X:/OpenMind-main/OpenMind-main/openmind-subnet/gateway/mcp_server.py",
+        "-m",
+        "gateway.mcp_server",
         "--bff-url",
-        "https://frontend-zeta-rosy-10.vercel.app",
-        "--api-key",
-        "om_live_TvfVF3Nf_Xk1R00uZ9hY9-6NxBCl0LAmiMjGIxwlkgo"
-      ]
+        "http://127.0.0.1:3000"
+      ],
+      "env": {
+        "PYTHONPATH": "X:/OpenMind-main/OpenMind-main/openmind-subnet",
+        "MINDMESH_API_KEY": "om_live_DL4AeeJVzbLS3SBu1SDVZJFEwz2y1A_qVKGaWyk9VAI",
+        "OPENMIND_API_KEY": "om_live_DL4AeeJVzbLS3SBu1SDVZJFEwz2y1A_qVKGaWyk9VAI",
+        "OPENMIND_DEFAULT_SESSION_ID": "openmind_shared_main"
+      }
     }
   }
 }

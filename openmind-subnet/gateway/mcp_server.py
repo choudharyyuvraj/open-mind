@@ -70,6 +70,7 @@ _GATEWAY_TO_BFF: Dict[str, str] = {
 _bff_url: Optional[str] = None
 _api_key: Optional[str] = None
 _api_url: str = "http://localhost:8090"
+_default_session_id: Optional[str] = None
 
 
 def _resolved_path(gateway_path: str) -> str:
@@ -102,6 +103,8 @@ def _full_url(gateway_path: str) -> str:
 
 def _derived_session_id() -> Optional[str]:
     """Create a stable default session id for BFF mode when the client omits one."""
+    if _default_session_id:
+        return _default_session_id
     if not _bff_url or not _api_key:
         return None
     digest = hashlib.sha256(_api_key.encode("utf-8")).hexdigest()[:24]
@@ -403,7 +406,7 @@ async def context_resource() -> str:
 # ---------------------------------------------------------------------------
 
 def main():
-    global _api_url, _bff_url, _api_key
+    global _api_url, _bff_url, _api_key, _default_session_id
     parser = argparse.ArgumentParser(description="OpenMind MCP server")
     parser.add_argument(
         "--api-url",
@@ -421,6 +424,12 @@ def main():
         default="",
         help="om_live_… API key for BFF mode. Falls back to OPENMIND_API_KEY env var.",
     )
+    parser.add_argument(
+        "--default-session-id",
+        default="",
+        help="Optional shared session namespace used when tool calls omit session_id. "
+        "Falls back to OPENMIND_DEFAULT_SESSION_ID env var.",
+    )
     args = parser.parse_args()
     _api_url = args.api_url.rstrip("/")
     bff = (args.bff_url or os.environ.get("OPENMIND_BFF_URL", "") or "").strip()
@@ -437,6 +446,10 @@ def main():
             "Set BFF via --bff-url or OPENMIND_BFF_URL."
         )
     _api_key = key or None
+    _default_session_id = (
+        args.default_session_id
+        or os.environ.get("OPENMIND_DEFAULT_SESSION_ID", "")
+    ).strip() or None
     mcp.run()
 
 

@@ -11,7 +11,8 @@
         "${MINDMESH_API_KEY}"
       ],
       "env": {
-        "PYTHONPATH": "X:/OpenMind-main/OpenMind-main/openmind-subnet"
+        "PYTHONPATH": "X:/OpenMind-main/OpenMind-main/openmind-subnet",
+        "OPENMIND_DEFAULT_SESSION_ID": "openmind_shared_main"
       }
     }
   }
